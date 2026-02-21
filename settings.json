@@ -1,0 +1,16 @@
+{
+  "bot_on": true,
+  "ai_mode": "romantic",
+  "reply_delay_min": 2000,
+  "reply_delay_max": 5000,
+  "allowed_groups": [],
+  "blocked_numbers": [],
+  "friends": [],
+  "family": [],
+  "unknown_behavior": "formal",
+  "cooldown_ms": 10000,
+  "disabled_chats": {},
+  "owner_name": "Jaswant sir",
+  "owner_insta": "@jaswant_0707",
+  "system_prompt": ""
+}

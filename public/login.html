@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Joyz WhatsApp SaaS</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzusRFxYf8id0heEZcDL21Su8DGFQZT2c",
+            authDomain: "whatsapp-1a8d2.firebaseapp.com",
+            databaseURL: "https://whatsapp-1a8d2-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "whatsapp-1a8d2",
+            storageBucket: "whatsapp-1a8d2.firebasestorage.app",
+            messagingSenderId: "453256168351",
+            appId: "1:453256168351:web:83f790ec1f1c2d508f33aa",
+            measurementId: "G-1SYMJEW5CD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // User-friendly error messages
+        function getErrorMessage(errorCode) {
+            const errorMessages = {
+                'auth/invalid-email': 'Please enter a valid email address.',
+                'auth/user-disabled': 'This account has been disabled. Please contact support.',
+                'auth/user-not-found': 'No account found with this email. Please sign up first.',
+                'auth/wrong-password': 'Incorrect password. Please try again.',
+                'auth/invalid-credential': 'Invalid email or password.',
+                'auth/too-many-requests': 'Too many failed login attempts. Please try again later.',
+                'auth/network-request-failed': 'Network error. Please check your internet connection.',
+                'auth/configuration-not-found': 'Firebase Authentication is not properly configured. Please ensure Email/Password sign-in is enabled in Firebase Console.',
+                'auth/operation-not-allowed': 'Email/Password login is not enabled. Please contact support.'
+            };
+            return errorMessages[errorCode] || 'Login failed. Please try again.';
+        }
+
+        window.handleLogin = async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const error = document.getElementById('error');
+
+            error.textContent = '';
+
+            // Validation
+            if (!email) {
+                error.textContent = 'Please enter your email';
+                return;
+            }
+
+            if (!password) {
+                error.textContent = 'Please enter your password';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+
+            try {
+                // Sign in with Firebase Auth
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Get auth token
+                const token = await user.getIdToken();
+                
+                // Store credentials
+                localStorage.setItem('token', token);
+                localStorage.setItem('uid', user.uid);
+                localStorage.setItem('userEmail', email);
+                if (user.displayName) {
+                    localStorage.setItem('userName', user.displayName);
+                }
+
+                // Success - redirect to dashboard
+                window.location.href = '/dashboard';
+
+            } catch (err) {
+                console.error('Login error:', err);
+                
+                // Show user-friendly error message
+                const errorMessage = getErrorMessage(err.code);
+                error.textContent = errorMessage;
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        };
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+        }
+        .container {
+            background: white;
+            padding: 50px 60px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 40px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error {
+            color: #ef4444;
+            background: #fee2e2;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .error:not(:empty) {
+            display: block;
+        }
+        .link {
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+        }
+        .link a {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <p class="subtitle">Welcome back to Joyz!</p>
+        
+        <div id="error" class="error"></div>
+        
+        <form onsubmit="handleLogin(event)">
+            <label>Email</label>
+            <input type="email" id="email" required placeholder="your@email.com" autocomplete="email">
+            
+            <label>Password</label>
+            <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+            
+            <button type="submit" id="submitBtn">Login</button>
+        </form>
+        
+        <div class="link">
+            Don't have an account? <a href="/signup">Sign Up</a>
+        </div>
+    </div>
+</body>
+</html>

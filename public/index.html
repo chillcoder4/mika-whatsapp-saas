@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joyz WhatsApp SaaS - Multi-User AI Bot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+        }
+        .container {
+            text-align: center;
+            max-width: 900px;
+            padding: 60px 40px;
+        }
+        h1 {
+            font-size: 3.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+        .subtitle {
+            font-size: 1.4em;
+            color: #64748b;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        .feature h3 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .feature p {
+            color: #64748b;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .cta {
+            display: inline-flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+        .btn {
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #3b82f6;
+            border: 2px solid #3b82f6;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Joyz</h1>
+        <p class="subtitle">Multi-User AI WhatsApp Bot Platform</p>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Responses</h3>
+                <p>Intelligent, contextual, and personalized replies powered by Groq AI</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔥</div>
+                <h3>Multi-User</h3>
+                <p>Each user gets their own WhatsApp session and AI settings</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">💾</div>
+                <h3>Memory</h3>
+                <p>Per-chat memory with Firebase persistence - 24/7 available</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">⏸️</div>
+                <h3>Wait Timer</h3>
+                <p>Pause conversations with @joyz Xmin wait command</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Dashboard</h3>
+                <p>Beautiful dashboard with real-time chat history management</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <h3>Secure</h3>
+                <p>Firebase authentication with per-user data isolation</p>
+            </div>
+        </div>
+
+        <div class="cta">
+            <a href="/login" class="btn btn-primary">Login</a>
+            <a href="/signup" class="btn btn-secondary">Sign Up</a>
+        </div>
+    </div>
+</body>
+</html>

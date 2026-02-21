@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joyz Personal WhatsApp Assistant</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07080d;
+            --bg-2: #0b0f1f;
+            --panel: #0f152b;
+            --panel-2: #121b37;
+            --text: #e6ecff;
+            --muted: #8ea0c9;
+            --neon: #33ffcc;
+            --neon-2: #6a5cff;
+            --danger: #ff4d6d;
+            --warning: #ffb86b;
+            --border: rgba(110, 135, 255, 0.2);
+            --glow: 0 0 24px rgba(51, 255, 204, 0.25);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: radial-gradient(1200px 800px at 10% -10%, rgba(106, 92, 255, 0.3), transparent),
+                        radial-gradient(900px 600px at 90% -20%, rgba(51, 255, 204, 0.2), transparent),
+                        var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, rgba(18, 27, 55, 0.9), rgba(9, 13, 29, 0.9));
+            border-right: 1px solid var(--border);
+            padding: 26px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 1.4em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text);
+        }
+
+        .brand span {
+            color: var(--neon);
+            text-shadow: var(--glow);
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav button {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            padding: 12px 14px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav button.active,
+        .nav button:hover {
+            color: var(--text);
+            border-color: var(--border);
+            background: rgba(51, 255, 204, 0.08);
+            box-shadow: var(--glow);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            font-size: 0.85em;
+            color: var(--muted);
+        }
+
+        .main {
+            padding: 28px 32px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .topbar h1 {
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 14px;
+        }
+
+        .user-chip span {
+            font-size: 0.9em;
+            color: var(--muted);
+        }
+
+        .logout-btn {
+            border: 1px solid rgba(255, 77, 109, 0.4);
+            background: rgba(255, 77, 109, 0.15);
+            color: #ffd9e2;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .card {
+            background: linear-gradient(160deg, rgba(18, 27, 55, 0.9), rgba(12, 18, 38, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            font-size: 1.1em;
+            margin-bottom: 14px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+        }
+
+        .status-connected { background: var(--neon); box-shadow: var(--glow); }
+        .status-disconnected { background: var(--danger); }
+        .status-loading { background: var(--warning); animation: pulse 1s infinite; }
+
+        @keyframes pulse { 50% { opacity: 0.4; } }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            background: rgba(51, 255, 204, 0.12);
+            border: 1px solid rgba(51, 255, 204, 0.4);
+            color: var(--neon);
+        }
+
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(106, 92, 255, 0.12);
+            border: 1px solid rgba(106, 92, 255, 0.3);
+            border-radius: 12px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        textarea { min-height: 100px; }
+
+        label {
+            display: block;
+            font-size: 0.85em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(51, 255, 204, 0.9), rgba(106, 92, 255, 0.9));
+            border: none;
+            color: #0b0f1f;
+            font-weight: 700;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: var(--glow);
+        }
+
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        .btn.danger {
+            background: rgba(255, 77, 109, 0.85);
+            color: white;
+            box-shadow: none;
+        }
+
+        .qr {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: white;
+            border-radius: 14px;
+            margin-top: 16px;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(15, 21, 43, 0.6);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover,
+        .list-item.active {
+            border-color: rgba(51, 255, 204, 0.6);
+            box-shadow: var(--glow);
+        }
+
+        .meta {
+            font-size: 0.75em;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .memory-box {
+            background: rgba(10, 14, 30, 0.8);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 0.92em;
+        }
+
+        .message.user {
+            background: rgba(51, 255, 204, 0.1);
+            border: 1px solid rgba(51, 255, 204, 0.3);
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            background: rgba(106, 92, 255, 0.1);
+            border: 1px solid rgba(106, 92, 255, 0.3);
+        }
+
+        .message span {
+            display: block;
+            font-size: 0.72em;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .test-input {
+            display: grid;
+            grid-template-columns: 1fr 150px auto;
+            gap: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 1000;
+        }
+
+        .toast.show { display: block; }
+
+        @media (max-width: 960px) {
+            body { grid-template-columns: 1fr; }
+            .sidebar { flex-direction: row; overflow-x: auto; }
+            .main { padding: 20px; }
+            .test-input { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">Joyz <span>Assistant</span></div>
+        <nav class="nav">
+            <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+            <button class="nav-btn" onclick="showSection('memory')">Memory</button>
+            <button class="nav-btn" onclick="showSection('test')">AI Test</button>
+            <button class="nav-btn" onclick="showSection('settings')">Settings</button>
+        </nav>
+        <div class="sidebar-footer">Personal Smart WhatsApp Assistant</div>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <h1>Control Center</h1>
+            <div class="user-chip">
+                <span id="userName">Loading...</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <section class="section active" id="section-overview">
+            <div class="grid two">
+                <div class="card">
+                    <h2>WhatsApp Connection</h2>
+                    <div class="status-row" id="waStatus">
+                        <div class="status-indicator status-loading"></div>
+                        <span id="waStatusText">Checking status...</span>
+                    </div>
+                    <div id="qrContainer"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn" onclick="connectWhatsApp()">Connect</button>
+                        <button class="btn secondary" onclick="disconnectWhatsApp()">Disconnect</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>AI Mode</h2>
+                    <div class="toggle" style="margin-bottom: 16px;">
+                        <span>Status</span>
+                        <select id="botOn">
+                            <option value="true">ON</option>
+                            <option value="false">OFF</option>
+                        </select>
+                    </div>
+                    <label>Personality</label>
+                    <select id="aiMode">
+                        <option value="romantic">Romantic</option>
+                        <option value="casual">Casual</option>
+                        <option value="professional">Professional</option>
+                    </select>
+                    <button class="btn" style="margin-top: 16px;" onclick="saveSettings()">Save AI Mode</button>
+                </div>
+                <div class="card">
+                    <h2>Live Time</h2>
+                    <div class="status-row">
+                        <div class="status-indicator status-connected"></div>
+                        <span id="liveTimeText">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-memory">
+            <div class="grid two">
+                <div class="card">
+                    <h2>Smart Memory Viewer</h2>
+                    <div id="smartMemoryList" class="list"></div>
+                </div>
+                <div class="card">
+                    <h2>Smart Memory Details</h2>
+                    <div id="smartMemoryDetail" class="memory-box">Select a chat to view smart memory.</div>
+                </div>
+            </div>
+            <div class="grid two" style="margin-top: 20px;">
+                <div class="card">
+                    <h2>Temporary Memory Viewer</h2>
+                    <div id="tempMemoryList" class="list"></div>
+                </div>
+                <div class="card">
+                    <h2>Temporary Memory Details</h2>
+                    <div id="tempMemoryDetail" class="memory-box">Select a chat to view temporary memory.</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-test">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h2>AI Test Chat</h2>
+                    <button class="btn danger" onclick="clearTestMemory()">Clear</button>
+                </div>
+                <div id="testChatHistory" class="memory-box" style="margin-bottom: 16px; height: 340px;"></div>
+                <div class="test-input">
+                    <input type="text" id="testInput" placeholder="Type a message" onkeypress="if(event.key==='Enter') sendTestMessage()">
+                    <select id="testMode">
+                        <option value="romantic">Romantic</option>
+                        <option value="casual">Casual</option>
+                        <option value="professional">Professional</option>
+                    </select>
+                    <button class="btn" onclick="sendTestMessage()">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="section-settings">
+            <div class="grid two">
+                <div class="card">
+                    <h2>Ignore Private Chats</h2>
+                    <label>Comma separated numbers</label>
+                    <textarea id="ignorePrivateChats" placeholder="911234567890,919876543210"></textarea>
+                    <button class="btn" onclick="saveIgnoreLists()">Save</button>
+                </div>
+                <div class="card">
+                    <h2>Ignore Group Chats</h2>
+                    <label>Comma separated group JIDs</label>
+                    <textarea id="ignoreGroupChats" placeholder="120363314294330660@g.us"></textarea>
+                    <button class="btn" onclick="saveIgnoreLists()">Save</button>
+                </div>
+            </div>
+            <div class="grid two" style="margin-top: 20px;">
+                <div class="card">
+                    <h2>Ignore Private List</h2>
+                    <div id="ignorePrivateList" class="list"></div>
+                </div>
+                <div class="card">
+                    <h2>Ignore Group List</h2>
+                    <div id="ignoreGroupList" class="list"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const socket = io();
+        let currentUser = null;
+
+        socket.on('qr', (data) => {
+            if (data) {
+                showQR(data);
+                updateWAStatus('connecting');
+            } else {
+                hideQR();
+            }
+        });
+
+        socket.on('whatsapp_status', (status) => {
+            updateWAStatus(status);
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            const uid = localStorage.getItem('uid');
+
+            if (!token || !uid) {
+                window.location.href = '/login';
+                return;
+            }
+
+            socket.emit('join_user', uid);
+
+            try {
+                const response = await fetch('/api/user/info', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    currentUser = result.user;
+                    document.getElementById('userName').textContent = currentUser.name;
+                }
+            } catch (error) {
+                console.error('Failed to load user info:', error);
+            }
+
+            loadWhatsAppStatus();
+            loadSettings();
+            loadSmartMemoryList();
+            loadTempMemoryList();
+            loadTestHistory();
+            loadIgnoreLists();
+            startLiveTimeUpdates();
+        });
+
+        function showSection(name) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`section-${name}`).classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (name === 'memory') {
+                loadSmartMemoryList();
+                loadTempMemoryList();
+            }
+            if (name === 'test') loadTestHistory();
+        }
+
+        async function loadWhatsAppStatus() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/whatsapp/status', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            updateWAStatus(result.status);
+
+            if (result.status !== 'connected') {
+                const qrRes = await fetch('/api/whatsapp/qr', { headers: { 'Authorization': `Bearer ${token}` } });
+                const qrData = await qrRes.json();
+                if (qrData.success && qrData.qr) showQR(qrData.qr);
+            }
+        }
+
+        function updateWAStatus(status) {
+            const indicator = document.querySelector('#waStatus .status-indicator');
+            const text = document.getElementById('waStatusText');
+
+            indicator.className = 'status-indicator';
+
+            switch(status) {
+                case 'connected':
+                    indicator.classList.add('status-connected');
+                    text.textContent = 'Connected';
+                    hideQR();
+                    break;
+                case 'logged_out':
+                case 'disconnected':
+                    indicator.classList.add('status-disconnected');
+                    text.textContent = 'Disconnected';
+                    break;
+                case 'connecting':
+                    indicator.classList.add('status-loading');
+                    text.textContent = 'Connecting / Scan QR';
+                    break;
+                default:
+                    indicator.classList.add('status-loading');
+                    text.textContent = status || 'Checking';
+            }
+        }
+
+        async function connectWhatsApp() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/whatsapp/connect', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ phoneNumber: '' })
+            });
+            showToast('Initializing session...');
+            updateWAStatus('connecting');
+        }
+
+        async function disconnectWhatsApp() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/whatsapp/disconnect', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            showToast('Disconnected');
+            updateWAStatus('disconnected');
+        }
+
+        function showQR(qrImage) {
+            const container = document.getElementById('qrContainer');
+            container.innerHTML = `
+                <div class="qr">
+                    <img src="${qrImage}" width="220">
+                </div>
+            `;
+        }
+
+        function hideQR() {
+            document.getElementById('qrContainer').innerHTML = '';
+        }
+
+        async function loadSettings() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/settings', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('aiMode').value = result.settings.ai_mode;
+                document.getElementById('botOn').value = result.settings.bot_on ? 'true' : 'false';
+                const privateIgnore = result.settings.ignorePrivate || result.settings.ignore_private_chats || [];
+                const groupIgnore = result.settings.ignoreGroups || result.settings.ignore_group_chats || [];
+                document.getElementById('ignorePrivateChats').value = privateIgnore.join(', ');
+                document.getElementById('ignoreGroupChats').value = groupIgnore.join(', ');
+            }
+        }
+
+        async function saveSettings() {
+            const token = localStorage.getItem('token');
+            const settings = {
+                ai_mode: document.getElementById('aiMode').value,
+                bot_on: document.getElementById('botOn').value === 'true'
+            };
+
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            });
+
+            const result = await response.json();
+            showToast(result.success ? 'Settings saved' : 'Save failed');
+        }
+
+        async function saveIgnoreLists() {
+            const token = localStorage.getItem('token');
+            const privateChats = document.getElementById('ignorePrivateChats').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            const groupChats = document.getElementById('ignoreGroupChats').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ignore_private_chats: privateChats,
+                    ignore_group_chats: groupChats,
+                    ignorePrivate: privateChats,
+                    ignoreGroups: groupChats
+                })
+            });
+
+            const result = await response.json();
+            showToast(result.success ? 'Ignore lists saved' : 'Save failed');
+            loadIgnoreLists();
+        }
+
+        async function loadIgnoreLists() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/ignore-list', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            const privateContainer = document.getElementById('ignorePrivateList');
+            const groupContainer = document.getElementById('ignoreGroupList');
+
+            if (!result.success) {
+                privateContainer.innerHTML = '<div class="meta">Failed to load.</div>';
+                groupContainer.innerHTML = '<div class="meta">Failed to load.</div>';
+                return;
+            }
+
+            const privateList = result.private || [];
+            const groupList = result.groups || [];
+
+            privateContainer.innerHTML = privateList.length === 0
+                ? '<div class="meta">No ignored private chats.</div>'
+                : privateList.map(jid => `
+                    <div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>${jid}</div>
+                        <button class="btn danger" style="padding: 6px 10px;" onclick="removeIgnored('private', '${encodeURIComponent(jid)}')">Delete</button>
+                    </div>
+                `).join('');
+
+            groupContainer.innerHTML = groupList.length === 0
+                ? '<div class="meta">No ignored group chats.</div>'
+                : groupList.map(jid => `
+                    <div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>${jid}</div>
+                        <button class="btn danger" style="padding: 6px 10px;" onclick="removeIgnored('group', '${encodeURIComponent(jid)}')">Delete</button>
+                    </div>
+                `).join('');
+        }
+
+        async function removeIgnored(type, jid) {
+            const token = localStorage.getItem('token');
+            const endpoint = type === 'private'
+                ? `/api/ignore/private/${jid}`
+                : `/api/ignore/group/${jid}`;
+
+            const response = await fetch(endpoint, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const result = await response.json();
+            showToast(result.success ? 'Removed from ignore list' : 'Remove failed');
+            loadIgnoreLists();
+        }
+
+        async function loadSmartMemoryList() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/memory/smart', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            const container = document.getElementById('smartMemoryList');
+
+            if (!result.success || result.chats.length === 0) {
+                container.innerHTML = '<div class="meta">No smart memory yet.</div>';
+                return;
+            }
+
+            container.innerHTML = result.chats.map(chat => `
+                <div class="list-item" onclick="loadSmartMemoryDetail('${encodeURIComponent(chat.chatJid)}')">
+                    <div>${chat.chatJid}</div>
+                    <div class="meta">${chat.lastTopic || 'No topic yet'}</div>
+                </div>
+            `).join('');
+        }
+
+        function startLiveTimeUpdates() {
+            refreshLiveTime();
+            setInterval(refreshLiveTime, 1000);
+        }
+
+        async function refreshLiveTime() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const response = await fetch('/api/time', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('liveTimeText').textContent = result.time;
+                }
+            } catch (error) {
+                document.getElementById('liveTimeText').textContent = 'Unavailable';
+            }
+        }
+
+        async function loadSmartMemoryDetail(chatJid) {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/memory/smart/${chatJid}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            const container = document.getElementById('smartMemoryDetail');
+
+            if (!result.success || !result.memory) {
+                container.innerHTML = 'No smart memory for this chat yet.';
+                return;
+            }
+
+            const memory = result.memory;
+            container.innerHTML = `
+                <div><strong>Summary:</strong> ${memory.summary || 'N/A'}</div>
+                <div style="margin-top: 8px;"><strong>Relationship:</strong> ${memory.relationship || 'N/A'}</div>
+                <div style="margin-top: 8px;"><strong>Mood:</strong> ${memory.mood || 'N/A'}</div>
+                <div style="margin-top: 8px;"><strong>Last Topic:</strong> ${memory.lastTopic || 'N/A'}</div>
+            `;
+        }
+
+        async function loadTempMemoryList() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/memory/temp', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            const container = document.getElementById('tempMemoryList');
+
+            if (!result.success || result.chats.length === 0) {
+                container.innerHTML = '<div class="meta">No temporary memory yet.</div>';
+                return;
+            }
+
+            container.innerHTML = result.chats.map(chat => `
+                <div class="list-item" onclick="loadTempMemoryDetail('${encodeURIComponent(chat.chatJid)}')">
+                    <div>${chat.chatJid}</div>
+                    <div class="meta">${chat.messages.length} recent messages</div>
+                </div>
+            `).join('');
+        }
+
+        async function loadTempMemoryDetail(chatJid) {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/memory/temp/${chatJid}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            const container = document.getElementById('tempMemoryDetail');
+
+            if (!result.success || result.history.length === 0) {
+                container.innerHTML = 'No temporary memory for this chat.';
+                return;
+            }
+
+            container.innerHTML = result.history.map(msg => `
+                <div class="message ${msg.role === 'user' ? 'user' : 'assistant'}">
+                    <span>${msg.senderName || 'User'}</span>
+                    <div>${msg.text}</div>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function loadTestHistory() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/ai-test/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+
+            const container = document.getElementById('testChatHistory');
+            if (!result.success || result.history.length === 0) {
+                container.innerHTML = '<div class="meta">Start a conversation to test AI.</div>';
+                return;
+            }
+
+            container.innerHTML = result.history.map(msg => `
+                <div class="message ${msg.role === 'user' ? 'user' : 'assistant'}">
+                    <span>${msg.senderName}</span>
+                    <div>${msg.text}</div>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendTestMessage() {
+            const input = document.getElementById('testInput');
+            const message = input.value.trim();
+            const mode = document.getElementById('testMode').value;
+            const token = localStorage.getItem('token');
+
+            if (!message) return;
+
+            appendTestMessage({ role: 'user', text: message, senderName: 'You' });
+            input.value = '';
+            input.disabled = true;
+
+            try {
+                const response = await fetch('/api/ai-test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message, ai_mode: mode })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    appendTestMessage({ role: 'assistant', text: result.reply, senderName: 'Joyz AI' });
+                } else {
+                    appendTestMessage({ role: 'assistant', text: 'Error: ' + result.error, senderName: 'System' });
+                }
+            } catch (e) {
+                appendTestMessage({ role: 'assistant', text: 'Network error', senderName: 'System' });
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        async function clearTestMemory() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/ai-test/memory', {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            document.getElementById('testChatHistory').innerHTML = '<div class="meta">Memory cleared.</div>';
+        }
+
+        function appendTestMessage(msg) {
+            const container = document.getElementById('testChatHistory');
+            const div = document.createElement('div');
+            div.className = `message ${msg.role === 'user' ? 'user' : 'assistant'}`;
+            div.innerHTML = `<span>${msg.senderName}</span><div>${msg.text}</div>`;
+
+            if (container.querySelector('.meta')) {
+                container.innerHTML = '';
+            }
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function logout() {
+            const token = localStorage.getItem('token');
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('uid');
+            window.location.href = '/';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>

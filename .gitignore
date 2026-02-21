@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+
+# Sessions (WhatsApp auth)
+sessions/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+
+# Firebase Admin SDK files
+firebase-adminsdk*.json
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp
+tmp/
+temp/

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: joyz-whatsapp-ai
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 3000
+    disks:
+      - name: whatsapp-sessions
+        mountPath: /app/sessions
+        sizeGB: 1
