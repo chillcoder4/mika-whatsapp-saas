@@ -4,7 +4,7 @@ const { updateSmartMemoryFromMessage } = require('../memory/smart-memory');
 const { getUserSettings, getUserProfile, getSmartMemory, saveMessage, getChatHistory, addSmartMemoryImportantPoint } = require('../services/firebase-service');
 const pauseStateManager = require('../state/pause-state');
 const { getLiveTime } = require('../utils/time');
-const { searchWeb } = require('../services/search');
+const { searchInternet } = require('../services/webSearch');
 
 const processedMessages = new Set();
 
@@ -279,7 +279,7 @@ async function handleIncomingMessage(userId, sock, msg) {
 
         if (isSearchQuery(lowerText)) {
             try {
-                const searchReply = await searchWeb(text);
+                const searchReply = await searchInternet(text);
                 await sock.sendMessage(remoteJid, { text: searchReply });
                 tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', searchReply, 'Joyz AI');
                 await saveMessage(userId, normalizedRemoteJid, 'assistant', searchReply, 'Joyz AI').catch(() => {});

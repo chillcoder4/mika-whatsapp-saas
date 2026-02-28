@@ -1,16 +1,16 @@
 const admin = require('firebase-admin');
 
-// Firebase Configuration - Hardcoded from user's web config
-const firebaseConfig = {
-    apiKey: "AIzaSyCzusRFxYf8id0heEZcDL21Su8DGFQZT2c",
-    authDomain: "whatsapp-1a8d2.firebaseapp.com",
-    databaseURL: "https://whatsapp-1a8d2-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "whatsapp-1a8d2",
-    storageBucket: "whatsapp-1a8d2.firebasestorage.app",
-    messagingSenderId: "453256168351",
-    appId: "1:453256168351:web:83f790ec1f1c2d508f33aa",
-    measurementId: "G-1SYMJEW5CD"
-};
+// Firebase Configuration - Read dynamically from env variables
+const getFirebaseConfig = () => ({
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    databaseURL: process.env.FIREBASE_DATABASE_URL,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+});
 
 // Utility to sanitize JID for Firebase paths (removes invalid characters)
 function sanitizeJid(jid) {
@@ -24,7 +24,9 @@ function initializeFirebase() {
         // Handle common .env formatting issues for private keys
         let privateKey = process.env.FIREBASE_PRIVATE_KEY;
         if (privateKey) {
+            // Replace literal \n with real newlines
             privateKey = privateKey.replace(/\\n/g, '\n');
+            // Remove extra quotes if present
             if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
                 privateKey = privateKey.substring(1, privateKey.length - 1);
             }
@@ -44,13 +46,13 @@ function initializeFirebase() {
         if (missing.length === 0) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
-                databaseURL: firebaseConfig.databaseURL
+                databaseURL: getFirebaseConfig().databaseURL
             });
             console.log('✅ Firebase initialized with Service Account (Full Admin Access)');
         } else {
             // Fallback for purely database operations if Rules allow
             admin.initializeApp({
-                databaseURL: firebaseConfig.databaseURL
+                databaseURL: getFirebaseConfig().databaseURL
             });
             console.log('⚠️  Firebase initialized without Service Account (Restricted Access)');
             console.log(`👉 Missing variables for Auth: ${missing.join(', ')}`);
@@ -389,5 +391,5 @@ module.exports = {
     getUserChats,
     getChatHistory,
     saveMessage,
-    firebaseConfig
+    getFirebaseConfig
 };

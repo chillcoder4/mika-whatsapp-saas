@@ -2,8 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const { authenticateUser } = require('../middleware/auth');
-const { getSession, createWhatsAppSession, restoreSessions } = require('../whatsapp/manager');
-const { admin } = require('../services/firebase-service');
+const { getSession, createWhatsAppSession, restoreSessions, setSocketEmitter } = require('../whatsapp/manager');
+const { admin, getFirebaseConfig } = require('../services/firebase-service');
 const { loadSmartMemory, loadSmartMemoryChats } = require('../memory/loader');
 const tempMemory = require('../memory/temp-memory');
 const { generateAIResponse } = require('../ai/generator');
@@ -68,6 +68,9 @@ function emitToUser(userId, event, data) {
     io.to(`user:${userId}`).emit(event, data);
 }
 
+// Wire socket emitter into WhatsApp manager so QR/status events reach frontend
+setSocketEmitter(emitToUser);
+
 // Login/Signup is handled client-side via Firebase SDK
 // Backend just provides static pages and API protection
 
@@ -82,6 +85,11 @@ app.post('/api/auth/logout', authenticateUser, (req, res) => {
         console.error('[Logout Error]', error);
         res.status(500).json({ success: false, error: 'Logout failed' });
     }
+});
+
+// Get Firebase Client Config for frontend logic
+app.get('/api/firebase-config', (req, res) => {
+    res.json(getFirebaseConfig());
 });
 
 // ================= USER ROUTES =================

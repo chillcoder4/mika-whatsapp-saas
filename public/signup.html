@@ -9,20 +9,21 @@
         import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCzusRFxYf8id0heEZcDL21Su8DGFQZT2c",
-            authDomain: "whatsapp-1a8d2.firebaseapp.com",
-            databaseURL: "https://whatsapp-1a8d2-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "whatsapp-1a8d2",
-            storageBucket: "whatsapp-1a8d2.firebasestorage.app",
-            messagingSenderId: "453256168351",
-            appId: "1:453256168351:web:83f790ec1f1c2d508f33aa",
-            measurementId: "G-1SYMJEW5CD"
-        };
+        let auth;
+        let database;
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const database = getDatabase(app);
+        async function initApp() {
+            try {
+                const res = await fetch('/api/firebase-config');
+                const firebaseConfig = await res.json();
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                database = getDatabase(app);
+            } catch (err) {
+                console.error('Failed to load Firebase config', err);
+            }
+        }
+        initApp();
 
         // User-friendly error messages
         function getErrorMessage(errorCode) {
@@ -66,6 +67,11 @@
 
             if (password.length < 6) {
                 error.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+
+            if (!auth || !database) {
+                error.textContent = 'Firebase is not fully initialized yet. Try again in a second.';
                 return;
             }
 

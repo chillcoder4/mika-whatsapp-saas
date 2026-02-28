@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Joyz WhatsApp AI Bot - GitHub Upload Script (Mac/Linux)
+# Joyz WhatsApp SaaS - GitHub Upload Script (Mac/Linux)
 # Created for: Jaswant Sir
 
 echo "========================================"
-echo "Joyz Bot - GitHub Upload Script"
+echo "Joyz WhatsApp SaaS - GitHub Upload"
 echo "========================================"
 echo ""
 
@@ -19,13 +19,16 @@ git add .
 
 echo ""
 echo "Committing changes..."
-git commit -m "Joyz Bot V2.0:
-- Owner attribution system (Jaswant Sir, Instagram: @jaswant_0707)
-- My-style AI responses (direct, helpful, no filler)
-- Complete web dashboard with setup wizard
-- No .env dependency - all via dashboard
-- Render deployment ready
-- Detailed deployment guides"
+git commit -m "Joyz Bot V3.0 - Multi-User SaaS:
+- Firebase Auth + Realtime Database (per-user isolation)
+- Multi-user WhatsApp sessions with Baileys v7
+- AI failover: Groq primary/secondary + xAI (Grok) fallback
+- Smart Memory + Temp Memory per chat
+- Web Search via Serper.dev
+- Wait/Pause timer system
+- Owner bypass for ignore lists and pause
+- Beautiful dashboard with signup/login/QR
+- Render deployment ready"
 
 echo ""
 echo "========================================"
@@ -33,7 +36,7 @@ echo "NEXT STEP: Create GitHub Repo"
 echo "========================================"
 echo ""
 echo "1. Go to: https://github.com/new"
-echo "2. Repository name: joyz-whatsapp-ai-bot"
+echo "2. Repository name: joyz-whatsapp-saas"
 echo "3. Select Public (or Private)"
 echo "4. Click 'Create repository'"
 echo "5. Copy repository URL"

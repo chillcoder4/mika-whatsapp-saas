@@ -5,11 +5,10 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "dashboard": "node src/dashboard/server.js"
+    "dev": "nodemon src/app.js"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "whatsapp",

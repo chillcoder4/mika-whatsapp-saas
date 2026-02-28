@@ -7,7 +7,7 @@ const QRCode = require('qrcode'); // For web
 const botEmitter = require('./events');
 const fs = require('fs');
 
-const AUTH_PATH = path.join(process.cwd(), 'sessions', 'single');
+const AUTH_PATH = path.join(__dirname, '../auth_info_baileys');
 
 let qrCodeData = ""; // Store latest QR for web view
 let sock = null;

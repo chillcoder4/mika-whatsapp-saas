@@ -1,7 +1,7 @@
 const Groq = require('groq-sdk');
 const { getAIPrompt } = require('./prompt');
 const { getLiveTime } = require('../utils/time');
-const { searchWeb } = require('../services/search');
+const { searchInternet } = require('../services/webSearch');
 
 const AI_PRIORITY = ['groq_primary', 'groq_secondary', 'xai'];
 const GROQ_COOLDOWN_MS = 5 * 60 * 1000;
@@ -92,7 +92,7 @@ async function generateAIResponse(userId, chatJid, userMessage, senderName, pers
 
         if (/news|latest|search|kya hai|who is|what is/i.test(userMessage)) {
             try {
-                return await searchWeb(userMessage);
+                return await searchInternet(userMessage);
             } catch (err) {
                 console.error("Search Error:", err.message);
                 return "Search service temporary issue. Please try again.";

@@ -380,7 +380,7 @@
                     </div>
                     <div id="qrContainer"></div>
                     <div style="display: flex; gap: 10px; margin-top: 16px;">
-                        <button class="btn" onclick="connectWhatsApp()">Connect</button>
+                        <button class="btn" onclick="connectWhatsApp()">Re-Connect</button>
                         <button class="btn secondary" onclick="disconnectWhatsApp()">Disconnect</button>
                     </div>
                 </div>
@@ -484,7 +484,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const socket = io();
+        const socket = io({ auth: { token: localStorage.getItem('token') } });
         let currentUser = null;
 
         socket.on('qr', (data) => {

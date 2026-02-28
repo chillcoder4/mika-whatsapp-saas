@@ -1,5 +1,6 @@
 const Groq = require('groq-sdk');
 const { getAIPrompt } = require('./ai/prompt');
+const { searchInternet, needsWebSearch } = require('./services/webSearch');
 
 async function getAIResponse(jid, senderName, userMessage, aiMode, chatHistory = [], options = {}) {
     try {
@@ -25,7 +26,21 @@ async function getAIResponse(jid, senderName, userMessage, aiMode, chatHistory =
 
         const resolvedMode = firebaseSettings?.ai_mode || aiMode || 'casual';
         const resolvedOwnerName = firebaseProfile?.name || options.ownerName || 'Sir';
-        const systemPrompt = getAIPrompt(resolvedMode, resolvedOwnerName);
+        let systemPrompt = getAIPrompt(resolvedMode, resolvedOwnerName);
+
+        // === Web Search Integration (Serper.dev) ===
+        if (needsWebSearch(userMessage)) {
+            try {
+                console.log(`[WebSearch] Searching for: "${userMessage}"`);
+                const webData = await searchInternet(userMessage);
+                if (webData && !webData.includes('unavailable') && !webData.includes('No internet')) {
+                    systemPrompt += `\n\n[LIVE INTERNET DATA - Use this to answer the user's question accurately]\n${webData}`;
+                    console.log('[WebSearch] Data appended to system prompt');
+                }
+            } catch (searchErr) {
+                console.error('[WebSearch] Search failed, proceeding without web data:', searchErr.message);
+            }
+        }
 
         // Build messages array strictly for Llama 3 API
         let messages = [
