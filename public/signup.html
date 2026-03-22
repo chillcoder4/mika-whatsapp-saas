@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Joyz WhatsApp SaaS</title>
+    <title>Sign Up - Mika WhatsApp SaaS</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
@@ -227,6 +227,11 @@
         .link a:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 480px) {
+            .container { padding: 40px 24px; }
+            h1 { font-size: 2em; }
+        }
         .info {
             background: #dbeafe;
             color: #1e40af;
@@ -241,7 +246,7 @@
 <body>
     <div class="container">
         <h1>Sign Up</h1>
-        <p class="subtitle">Create your Joyz account</p>
+        <p class="subtitle">Create your Mika account</p>
         
         <div class="info">
             🔥 Make sure Firebase Authentication is enabled!

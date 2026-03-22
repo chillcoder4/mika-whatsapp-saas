@@ -11,7 +11,7 @@ const runtimeConfig = {
 
 const defaultSettings = {
     bot_on: true,
-    ai_mode: "romantic",
+    ai_mode: "casual",
     reply_delay_min: 2000,
     reply_delay_max: 5000,
     allowed_groups: [],

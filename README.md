@@ -1,4 +1,4 @@
-# Joyz WhatsApp SaaS - Multi-User AI Bot Platform
+# Mika WhatsApp SaaS - Multi-User AI Bot Platform
 
 > **Transform WhatsApp into an intelligent, multi-user AI assistant platform with Firebase authentication, per-chat memory, and advanced conversation management.**
 
@@ -37,8 +37,8 @@
 
 ### ⏸️ Wait Command System
 ```
-@joyz 5min wait  → Pauses chat for 5 minutes
-@joyz time over  → Resumes immediately
+@mika 5min wait  → Pauses chat for 5 minutes
+@mika time over  → Resumes immediately
                  → Owner messages bypass pause
 ```
 
@@ -73,7 +73,7 @@
 ### 1. Clone & Install
 ```bash
 git clone <your-repo-url>
-cd joyz-whatsapp-saas
+cd mika-whatsapp-saas
 npm install
 ```
 
@@ -179,7 +179,7 @@ Each user follows the same signup → connect flow. All data is completely isola
 ## 🏗️ Project Structure
 
 ```
-joyz-whatsapp-saas/
+mika-whatsapp-saas/
 ├── src/
 │   ├── app.js                        # Application entry point
 │   ├── config.js                     # Settings loader (file-based, legacy)
@@ -289,8 +289,8 @@ Users can interact with the bot using these commands:
 |---|---|
 | `!ping` | Test bot responsiveness |
 | `!stats` | Show chat statistics |
-| `@joyz Xmin wait` | Pause chat for X minutes (1-120) |
-| `@joyz time over` | Resume chat immediately |
+| `@mika Xmin wait` | Pause chat for X minutes (1-120) |
+| `@mika time over` | Resume chat immediately |
 
 ---
 
@@ -378,7 +378,7 @@ sudo apt-get install -y nodejs
 sudo npm install -g pm2
 
 # Start application
-pm2 start src/app.js --name joyz-bot
+pm2 start src/app.js --name mika-bot
 pm2 save
 pm2 startup
 ```

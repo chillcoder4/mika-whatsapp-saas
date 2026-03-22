@@ -14,6 +14,16 @@ function detectMood(text) {
     return '';
 }
 
+function detectVibe(text) {
+    const lower = text.toLowerCase();
+    if (/(love|miss you|baby|jaan|sweet|cute|kiss|hug|romance|darling)/i.test(lower)) return 'Romantic';
+    if (/(hahaha|lol|lmao|joke|rofl|😂|🤣|funny|meme)/i.test(lower)) return 'Funny / Playful';
+    if (/(sir|madam|respect|request|kindly|please update|report|official)/i.test(lower)) return 'Professional';
+    if (/(wtf|fuck|idiot|stupid|kutta|bc|mc|hate|irritate|gussa|angry)/i.test(lower)) return 'Angry / Savage';
+    if (/(sad|dukhi|cry|hurt|pain|lonely|depressed|😭|broken)/i.test(lower)) return 'Sad / Stressed';
+    return 'Casual / Friendly'; // default
+}
+
 function extractPreference(text) {
     const match = text.match(/\b(i|me)\s+(like|love|prefer|enjoy|hate)\s+(.+)/i);
     if (!match) return '';
@@ -53,6 +63,10 @@ async function updateSmartMemoryFromMessage(userId, chatJid, role, text, senderN
 
     const detectedMood = detectMood(normalized);
     if (detectedMood) updates.mood = detectedMood;
+
+    const detectedVibe = detectVibe(normalized);
+    if (detectedVibe && detectedVibe !== 'Casual / Friendly') updates.vibe = detectedVibe;
+    else if (!existing?.vibe) updates.vibe = 'Casual / Friendly';
 
     const relationship = extractRelationship(normalized);
     if (relationship) updates.relationship = relationship;

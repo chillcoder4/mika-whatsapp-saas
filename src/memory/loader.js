@@ -43,26 +43,9 @@ async function loadUserChatStats(userId, limit = 50) {
     }
 }
 
-module.exports = { loadChatMemory, loadUserChatStats };
-
-// Smart Memory Loaders
-async function loadSmartMemory(userId, chatJid) {
-    try {
-        return await getSmartMemory(userId, chatJid);
-    } catch (error) {
-        console.error('[Smart Memory Loader] Error loading smart memory:', error);
-        return null;
-    }
-}
-
-async function loadSmartMemoryChats(userId) {
-    try {
-        return await listSmartMemoryChats(userId);
-    } catch (error) {
-        console.error('[Smart Memory Loader] Error listing smart memory:', error);
-        return [];
-    }
-}
-
-module.exports.loadSmartMemory = loadSmartMemory;
-module.exports.loadSmartMemoryChats = loadSmartMemoryChats;
+module.exports = { 
+    loadChatMemory, 
+    loadUserChatStats,
+    loadSmartMemory: getSmartMemory,
+    loadSmartMemoryChats: listSmartMemoryChats
+};

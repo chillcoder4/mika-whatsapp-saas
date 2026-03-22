@@ -80,7 +80,9 @@ async function createUser(email, password, displayName) {
     }
 }
 
-async function verifyUser(email, password) {
+async function verifyUser(email) {
+    // Note: Firebase Admin SDK cannot verify passwords server-side.
+    // Client SDK must handle actual authentication.
     try {
         const user = await admin.auth().getUserByEmail(email);
         return { success: true, uid: user.uid };
@@ -95,7 +97,7 @@ async function getUserSettings(userId) {
         const snapshot = await admin.database().ref(`users/${userId}/settings`).once('value');
         return snapshot.val() || {
             bot_on: true,
-            ai_mode: 'romantic',
+            ai_mode: 'casual',
             ignore_private_chats: [],
             ignore_group_chats: []
         };
@@ -103,7 +105,7 @@ async function getUserSettings(userId) {
         console.error('Get settings error:', error);
         return {
             bot_on: true,
-            ai_mode: 'romantic',
+            ai_mode: 'casual',
             ignore_private_chats: [],
             ignore_group_chats: []
         };
@@ -353,8 +355,7 @@ async function getChatHistory(userId, chatJid, limit = 50) {
 async function saveMessage(userId, chatJid, role, text, senderName = '') {
     try {
         const safeJid = sanitizeJid(chatJid);
-        const messageId = Date.now();
-        await admin.database().ref(`users/${userId}/memory/${safeJid}/messages/${messageId}`).set({
+        await admin.database().ref(`users/${userId}/memory/${safeJid}/messages`).push({
             role,
             text,
             senderName,

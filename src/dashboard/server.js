@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 const { authenticateUser } = require('../middleware/auth');
 const { getSession, createWhatsAppSession, restoreSessions, setSocketEmitter } = require('../whatsapp/manager');
-const { admin, getFirebaseConfig } = require('../services/firebase-service');
+const { admin, getFirebaseConfig, getUserProfile, getSmartMemory } = require('../services/firebase-service');
 const { loadSmartMemory, loadSmartMemoryChats } = require('../memory/loader');
 const tempMemory = require('../memory/temp-memory');
 const { generateAIResponse } = require('../ai/generator');
@@ -222,7 +222,6 @@ app.post('/api/settings', authenticateUser, async (req, res) => {
         const updates = {};
         
         // Update other settings
-        if (req.body.ai_mode) updates.ai_mode = req.body.ai_mode;
         if (req.body.bot_on !== undefined) updates.bot_on = req.body.bot_on;
         if (req.body.ignore_private_chats) updates.ignore_private_chats = req.body.ignore_private_chats;
         if (req.body.ignore_group_chats) updates.ignore_group_chats = req.body.ignore_group_chats;
@@ -305,7 +304,7 @@ app.delete('/api/ignore/group/:jid', authenticateUser, async (req, res) => {
 app.post('/api/ai-test', authenticateUser, async (req, res) => {
     try {
         const userId = req.userId;
-        const { message } = req.body;
+        const { message, forceProvider } = req.body;
         const apiKey = process.env.GROQ_API_KEY;
 
         if (!message) {
@@ -316,12 +315,11 @@ app.post('/api/ai-test', authenticateUser, async (req, res) => {
             return res.status(500).json({ success: false, error: 'AI Test failed' });
         }
 
-        const { getUserProfile, getUserSettings } = require('../services/firebase-service');
         const profile = await getUserProfile(userId);
-        const settings = await getUserSettings(userId);
-        const aiMode = settings?.ai_mode || 'romantic';
+        const smartMemory = await getSmartMemory(userId, 'ai_test');
+        const userVibe = smartMemory?.vibe || 'Casual / Friendly';
 
-        const isDeveloperQuestion = /who (made|created) you|who( is)? your developer|kisne banaya|developer|owner contact|creator info|joyz developer/i.test(message);
+        const isDeveloperQuestion = /who (made|created) you|who( is)? your developer|kisne banaya|developer|owner contact|creator info|mika developer/i.test(message);
         const developerReply = [
             'Developer Name: Jaswant',
             'Instagram: @jaswant_0707',
@@ -332,9 +330,10 @@ app.post('/api/ai-test', authenticateUser, async (req, res) => {
 
         const reply = isDeveloperQuestion
             ? developerReply
-            : await generateAIResponse(userId, 'ai_test', message, 'You', aiMode, [], {
+            : await generateAIResponse(userId, 'ai_test', message, 'You', userVibe, [], {
                 ownerName: profile?.name || 'Owner',
-                isOwnerMessage: true
+                isOwnerMessage: true,
+                forceProvider: forceProvider || ''
             });
 
         const messagesRef = admin.database().ref(`users/${userId}/memory/ai_test/messages`);
@@ -350,7 +349,7 @@ app.post('/api/ai-test', authenticateUser, async (req, res) => {
         await messagesRef.push({
             role: 'assistant',
             text: reply,
-            senderName: 'Joyz AI',
+            senderName: 'Mika AI',
             timestamp: Date.now()
         });
 

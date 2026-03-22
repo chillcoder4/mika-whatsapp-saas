@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: joyz-whatsapp-saas
+    name: mika-whatsapp-saas
     env: node
     plan: free
     region: singapore
@@ -35,7 +35,19 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_PRIMARY
+        sync: false
+      - key: GROQ_SECONDARY
+        sync: false
+      - key: GROQ_3
+        sync: false
+      - key: GROQ_4
+        sync: false
+      - key: GROQ_5
+        sync: false
       - key: SERPER_API_KEY
+        sync: false
+      - key: SERPER_API_KEY2
         sync: false
     disks:
       - name: whatsapp-sessions

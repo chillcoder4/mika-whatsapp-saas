@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Joyz WhatsApp SaaS</title>
+    <title>Login - Mika WhatsApp SaaS</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
@@ -196,12 +196,17 @@
         .link a:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 480px) {
+            .container { padding: 40px 24px; }
+            h1 { font-size: 2em; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Login</h1>
-        <p class="subtitle">Welcome back to Joyz!</p>
+        <p class="subtitle">Welcome back to Mika!</p>
         
         <div id="error" class="error"></div>
         

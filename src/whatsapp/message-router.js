@@ -1,17 +1,32 @@
 const { generateAIResponse } = require('../ai/generator');
 const tempMemory = require('../memory/temp-memory');
 const { updateSmartMemoryFromMessage } = require('../memory/smart-memory');
-const { getUserSettings, getUserProfile, getSmartMemory, saveMessage, getChatHistory, addSmartMemoryImportantPoint } = require('../services/firebase-service');
+const { getUserSettings, getUserProfile, getSmartMemory, updateSmartMemory, saveMessage, getChatHistory, addSmartMemoryImportantPoint } = require('../services/firebase-service');
 const pauseStateManager = require('../state/pause-state');
+const groupState = require('../state/group-state');
 const { getLiveTime } = require('../utils/time');
-const { searchInternet } = require('../services/webSearch');
 
 const processedMessages = new Set();
+const MAX_PROCESSED_MESSAGES = 2000;
 
-// Cleanup processed message IDs every hour
-setInterval(() => {
-    processedMessages.clear();
-}, 60 * 60 * 1000);
+const botMessageIds = new Set();
+const MAX_BOT_IDS = 1000;
+
+function trackProcessedMessage(messageId) {
+    if (processedMessages.size >= MAX_PROCESSED_MESSAGES) {
+        const firstId = processedMessages.values().next().value;
+        processedMessages.delete(firstId);
+    }
+    processedMessages.add(messageId);
+}
+
+function trackBotMessage(id) {
+    if (botMessageIds.size >= MAX_BOT_IDS) {
+        const firstId = botMessageIds.values().next().value;
+        botMessageIds.delete(firstId);
+    }
+    botMessageIds.add(id);
+}
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -32,7 +47,7 @@ function normalizeJid(jid = '') {
 }
 
 function isDeveloperQuestion(text = '') {
-    return /who (made|created) you|who( is)? your developer|kisne banaya|developer|owner contact|creator info|joyz developer/i.test(text);
+    return /who (made|created) you|who( is)? your developer|kisne banaya|developer|owner contact|creator info|mika developer/i.test(text);
 }
 
 function isIntroQuestion(text = '') {
@@ -52,29 +67,6 @@ function isTimeQuestion(text = '') {
 
 function isImportantMemoryCommand(text = '') {
     return /(ye save kar lo|yaad rakhna|remember this|save this|note this)/i.test(text);
-}
-
-function isSearchQuery(text = '') {
-    const trimmed = text.trim();
-    if (!trimmed) return false;
-
-    if (/^(hi|hello|hey|hii|kaise ho|kya haal|how are you|what's up|wassup)\b/i.test(trimmed)) {
-        return false;
-    }
-
-    if (/\b(news|latest|update|updates|research|internet|search|google|find|wikipedia|wiki|breaking)\b/i.test(trimmed)) {
-        return true;
-    }
-
-    if (/(tell me about|information on|info on|details on|explain)\b/i.test(trimmed)) {
-        return true;
-    }
-
-    if (/^(who|what|when|where|why|how|which|define|meaning|price|rate|cost|score|capital|population|president|ceo)\b/i.test(trimmed)) {
-        return true;
-    }
-
-    return trimmed.endsWith('?');
 }
 
 function detectLanguageHint(text = '') {
@@ -98,26 +90,24 @@ function buildNoResultsMessage(text = '') {
 }
 
 function buildIntroReply(ownerName) {
-    return `I am your personal WhatsApp assistant, ${ownerName} Sir.`;
+    return `Hi! I'm Mika ✨ — ${ownerName}'s personal WhatsApp assistant. How can I help you?`;
 }
 
 function buildDeveloperReply() {
     return [
-        'Developer Name: Jaswant',
-        'Instagram: @jaswant_0707',
-        'Instagram: @the.chillcoder',
-        'Email: jaswanty132@gmail.com',
-        'Email: chillcoder4@gmail.com'
+        '👨‍💻 Developer: Jaswant',
+        '📸 Instagram: @jaswnt_0707 | @the.chillcoder',
+        '📧 Email: jaswanty132@gmail.com | chillcoder4@gmail.com'
     ].join('\n');
 }
 
 function parseWaitMinutes(text = '') {
     const patterns = [
-        /@joyz\s*(\d+)\s*min(?:ute)?s?\s*wait/i,
-        /@joyz\s*wait\s*(\d+)\s*min(?:ute)?s?/i,
-        /@joyz\s*ruko\s*(\d+)\s*min(?:ute)?s?/i,
-        /@joyz\s*stop\s*for\s*(\d+)\s*min(?:ute)?s?/i,
-        /@joyz\s*don't\s*reply\s*for\s*(\d+)\s*min(?:ute)?s?/i
+        /@mika\s*(\d+)\s*min(?:ute)?s?\s*wait/i,
+        /@mika\s*wait\s*(\d+)\s*min(?:ute)?s?/i,
+        /@mika\s*ruko\s*(\d+)\s*min(?:ute)?s?/i,
+        /@mika\s*stop\s*for\s*(\d+)\s*min(?:ute)?s?/i,
+        /@mika\s*don't\s*reply\s*for\s*(\d+)\s*min(?:ute)?s?/i
     ];
 
     for (const pattern of patterns) {
@@ -128,7 +118,7 @@ function parseWaitMinutes(text = '') {
 }
 
 function isWaitTermination(text = '') {
-    return /@joyz\s*(time over|waiting time over|resume|start replying|wake up)/i.test(text);
+    return /@mika\s*(time over|waiting time over|resume|start replying|wake up)/i.test(text);
 }
 
 async function handleIncomingMessage(userId, sock, msg) {
@@ -137,8 +127,15 @@ async function handleIncomingMessage(userId, sock, msg) {
         const m = msg.messages[0];
         if (!m.message) return;
 
-        // Ignore messages sent by the bot itself
-        if (m.key.fromMe) return;
+        const messageId = m.key.id;
+        if (processedMessages.has(messageId)) return;
+        trackProcessedMessage(messageId);
+
+        if (m.key.fromMe) {
+            if (botMessageIds.has(messageId)) {
+                return; // AI's own reply, ignore it to prevent infinite loop
+            }
+        }
 
         const remoteJid = m.key.remoteJid;
         if (!remoteJid) return;
@@ -146,7 +143,6 @@ async function handleIncomingMessage(userId, sock, msg) {
         const cleanRemoteJid = cleanJid(remoteJid);
         const normalizedRemoteJid = normalizeJid(cleanRemoteJid);
 
-        // Broadcast and channel filters
         if (
             normalizedRemoteJid === 'status@broadcast' ||
             normalizedRemoteJid.includes('@newsletter') ||
@@ -156,15 +152,11 @@ async function handleIncomingMessage(userId, sock, msg) {
             return;
         }
 
-        const messageId = m.key.id;
-        if (processedMessages.has(messageId)) return;
-        processedMessages.add(messageId);
-
-        const senderJid = m.key.participant || remoteJid;
+        const senderJid = m.key.fromMe ? sock.user.id : (m.key.participant || remoteJid);
         const cleanSenderJid = cleanJid(senderJid);
         const normalizedSenderJid = normalizeJid(cleanSenderJid);
 
-        const pushName = m.pushName || 'User';
+        const pushName = m.key.fromMe ? 'Owner' : (m.pushName || 'User');
         const isGroup = normalizedRemoteJid.endsWith('@g.us');
 
         let text = '';
@@ -190,7 +182,7 @@ async function handleIncomingMessage(userId, sock, msg) {
         const ownerWhatsApp = cleanJid(profile?.ownerWhatsApp || '');
         const ownerName = profile?.name || settings?.owner_name || 'Owner';
         const normalizedOwnerJid = normalizeJid(ownerWhatsApp);
-        const isOwnerMessage = !!normalizedOwnerJid && normalizedSenderJid === normalizedOwnerJid;
+        const isOwnerMessage = m.key.fromMe || (!!normalizedOwnerJid && normalizedSenderJid === normalizedOwnerJid);
 
         let bypassPause = false;
         let bypassIgnore = false;
@@ -216,48 +208,79 @@ async function handleIncomingMessage(userId, sock, msg) {
         const waitMinutes = parseWaitMinutes(lowerText);
         if (waitMinutes && waitMinutes > 0 && waitMinutes <= 120) {
             await pauseStateManager.setPause(userId, normalizedRemoteJid, waitMinutes);
+            const wMsg = await sock.sendMessage(remoteJid, { text: `Mika pausing for ${waitMinutes} min ⏸️` }, { quoted: m });
+            if (wMsg?.key?.id) trackBotMessage(wMsg.key.id);
             return;
         }
 
         if (isWaitTermination(lowerText)) {
             await pauseStateManager.clearPause(userId, normalizedRemoteJid);
+            const wMsg = await sock.sendMessage(remoteJid, { text: `Mika is back online! 🟢` }, { quoted: m });
+            if (wMsg?.key?.id) trackBotMessage(wMsg.key.id);
             return;
         }
 
         const isPaused = await pauseStateManager.isPaused(userId, normalizedRemoteJid);
 
-        if (!bypassPause && isPaused) {
-            console.log(`[User ${userId}] Chat paused, hard-stop for non-owner`);
+        if (isPaused) {
+            console.log(`[User ${userId}] Chat paused, hard-stop. Waiting for timer or resume command.`);
             return;
         }
 
         if (!bypassBotToggle && settings.bot_on === false) return;
+
+        // Allow explicit vibe change globally (private or group)
+        const hasMikaTag = /@mika/i.test(lowerText);
+        if (hasMikaTag) {
+            const modeMatch = lowerText.match(/@mika\s+(romantic|angry|casual|professional|funny|savage|motivational)/i);
+            if (modeMatch) {
+                const forcedVibe = modeMatch[1];
+                const explicitVibe = forcedVibe.charAt(0).toUpperCase() + forcedVibe.slice(1).toLowerCase();
+                
+                // Immediately save to permanent memory so AI always remembers the vibe for this JID
+                await updateSmartMemory(userId, normalizedRemoteJid, { vibe: explicitVibe }).catch(() => {});
+                
+                // Also send a nice confirmation message
+                const vMsg = await sock.sendMessage(remoteJid, { text: `Done! My personality for this chat is now set to: ${explicitVibe} 😎` }, { quoted: m });
+                if (vMsg?.key?.id) trackBotMessage(vMsg.key.id);
+                return;
+            }
+        }
+
+        let isGroupActiveSession = false;
+        if (isGroup) {
+            isGroupActiveSession = true; // Groups now reply normally
+        }
 
         if (text.startsWith('!')) {
             const parts = text.slice(1).trim().split(' ');
             const command = parts[0].toLowerCase();
 
             if (command === 'ping') {
-                await sock.sendMessage(remoteJid, { text: 'Pong!' }, { quoted: m });
+                const pMsg = await sock.sendMessage(remoteJid, { text: 'Pong!' }, { quoted: m });
+                if (pMsg?.key?.id) trackBotMessage(pMsg.key.id);
                 return;
             }
 
             if (command === 'stats') {
                 const temp = tempMemory.getRecent(userId, normalizedRemoteJid) || [];
-                await sock.sendMessage(remoteJid, {
+                const sMsg = await sock.sendMessage(remoteJid, {
                     text: `Chat Stats\nRecent msgs: ${temp.length}\nChat: ${isGroup ? 'Group' : 'Private'}`
                 }, { quoted: m });
+                if (sMsg?.key?.id) trackBotMessage(sMsg.key.id);
                 return;
             }
         }
 
         if (isDeveloperQuestion(lowerText)) {
-            await sock.sendMessage(remoteJid, { text: buildDeveloperReply() }, { quoted: m });
+            const dMsg = await sock.sendMessage(remoteJid, { text: buildDeveloperReply() }, { quoted: m });
+            if (dMsg?.key?.id) trackBotMessage(dMsg.key.id);
             return;
         }
 
         if (isIntroQuestion(lowerText)) {
-            await sock.sendMessage(remoteJid, { text: buildIntroReply(ownerName) }, { quoted: m });
+            const iMsg = await sock.sendMessage(remoteJid, { text: buildIntroReply(ownerName) }, { quoted: m });
+            if (iMsg?.key?.id) trackBotMessage(iMsg.key.id);
             return;
         }
 
@@ -271,27 +294,11 @@ async function handleIncomingMessage(userId, sock, msg) {
 
         if (isTimeQuestion(lowerText)) {
             const timeReply = `Current Live Time: ${getLiveTime()}`;
-            await sock.sendMessage(remoteJid, { text: timeReply });
-            tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', timeReply, 'Joyz AI');
-            await saveMessage(userId, normalizedRemoteJid, 'assistant', timeReply, 'Joyz AI').catch(() => {});
+            const tMsg = await sock.sendMessage(remoteJid, { text: timeReply });
+            if (tMsg?.key?.id) trackBotMessage(tMsg.key.id);
+            tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', timeReply, 'Mika');
+            await saveMessage(userId, normalizedRemoteJid, 'assistant', timeReply, 'Mika').catch(() => {});
             return;
-        }
-
-        if (isSearchQuery(lowerText)) {
-            try {
-                const searchReply = await searchInternet(text);
-                await sock.sendMessage(remoteJid, { text: searchReply });
-                tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', searchReply, 'Joyz AI');
-                await saveMessage(userId, normalizedRemoteJid, 'assistant', searchReply, 'Joyz AI').catch(() => {});
-                return;
-            } catch (error) {
-                console.error('[Search Error]', error);
-                const errorReply = buildSearchErrorMessage(text);
-                await sock.sendMessage(remoteJid, { text: errorReply });
-                tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', errorReply, 'Joyz AI');
-                await saveMessage(userId, normalizedRemoteJid, 'assistant', errorReply, 'Joyz AI').catch(() => {});
-                return;
-            }
         }
 
         let chatHistory = tempMemory.getRecent(userId, normalizedRemoteJid);
@@ -305,16 +312,27 @@ async function handleIncomingMessage(userId, sock, msg) {
         }
 
         const smartMemory = await getSmartMemory(userId, normalizedRemoteJid);
-        const aiMode = settings.ai_mode || 'romantic';
+        
+        // Priority 1: Specifically requested group vibe for this active session
+        // Priority 2: Detected smartMemory vibe
+        // Priority 3: Default Casual
+        let userVibe = 'Casual / Friendly';
+        if (isGroup && isGroupActiveSession) {
+            const sessionVibe = groupState.getGroupVibe(userId, normalizedRemoteJid);
+            if (sessionVibe) userVibe = sessionVibe;
+            else if (smartMemory?.vibe) userVibe = smartMemory.vibe;
+        } else {
+            userVibe = smartMemory?.vibe || 'Casual / Friendly';
+        }
 
-        console.log(`[User ${userId}] Generating AI response...`);
+        console.log(`[User ${userId}] Generating AI response (Vibe: ${userVibe})...`);
 
         const responseText = await generateAIResponse(
             userId,
             normalizedRemoteJid,
             text,
             pushName,
-            aiMode,
+            userVibe,
             chatHistory,
             {
                 ownerName: ownerName,
@@ -344,10 +362,11 @@ async function handleIncomingMessage(userId, sock, msg) {
         await delay(typingDelay);
         await sock.sendPresenceUpdate('paused', remoteJid);
 
-        await sock.sendMessage(remoteJid, { text: responseText }, { quoted: m });
+        const sentMsg = await sock.sendMessage(remoteJid, { text: responseText }, { quoted: m });
+        if (sentMsg?.key?.id) trackBotMessage(sentMsg.key.id);
 
-        tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', responseText, 'Joyz AI');
-        await saveMessage(userId, normalizedRemoteJid, 'assistant', responseText, 'Joyz AI').catch(() => {});
+        tempMemory.addMessage(userId, normalizedRemoteJid, 'assistant', responseText, 'Mika');
+        await saveMessage(userId, normalizedRemoteJid, 'assistant', responseText, 'Mika').catch(() => {});
 
         console.log(`[User ${userId}] AI reply sent successfully`);
     } catch (error) {
@@ -355,10 +374,8 @@ async function handleIncomingMessage(userId, sock, msg) {
     }
 }
 
-module.exports = { handleIncomingMessage };
-
 function clearProcessedMessages() {
     processedMessages.clear();
 }
 
-module.exports.clearProcessedMessages = clearProcessedMessages;
+module.exports = { handleIncomingMessage, clearProcessedMessages };

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Joyz Personal WhatsApp Assistant</title>
+    <title>Mika Personal WhatsApp Assistant</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -342,23 +342,83 @@
         .toast.show { display: block; }
 
         @media (max-width: 960px) {
-            body { grid-template-columns: 1fr; }
-            .sidebar { flex-direction: row; overflow-x: auto; }
-            .main { padding: 20px; }
+            body { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: auto 1fr; 
+                min-height: 100vh;
+            }
+            .sidebar { 
+                flex-direction: row; 
+                align-items: center;
+                overflow-x: auto; 
+                padding: 16px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .nav {
+                flex-direction: row;
+                margin-left: auto;
+            }
+            .sidebar-footer { display: none; }
+            .main { padding: 24px 20px; }
             .test-input { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+            .main {
+                flex: 1;
+                padding: 20px 16px 80px 16px; /* Space for bottom nav */
+            }
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .topbar h1 { font-size: 1.4em; }
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                flex-direction: row;
+                background: var(--bg-2);
+                border-bottom: none;
+                border-top: 1px solid var(--border);
+                padding: 10px;
+                justify-content: center;
+            }
+            .logo { display: none; }
+            .nav {
+                width: 100%;
+                justify-content: space-around;
+                margin-left: 0;
+            }
+            .nav button {
+                padding: 10px;
+                flex: 1;
+                text-align: center;
+                font-size: 0.85em;
+            }
+            .grid.two { grid-template-columns: 1fr; }
+            .card { padding: 16px; }
         }
     </style>
 </head>
 <body>
     <aside class="sidebar">
-        <div class="brand">Joyz <span>Assistant</span></div>
+        <h1 class="logo">✨ Mika <span class="badge">SaaS</span></h1>
         <nav class="nav">
             <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
             <button class="nav-btn" onclick="showSection('memory')">Memory</button>
             <button class="nav-btn" onclick="showSection('test')">AI Test</button>
             <button class="nav-btn" onclick="showSection('settings')">Settings</button>
         </nav>
-        <div class="sidebar-footer">Personal Smart WhatsApp Assistant</div>
+        <div class="sidebar-footer">Powered by Mika AI</div>
     </aside>
 
     <main class="main">
@@ -379,26 +439,23 @@
                         <span id="waStatusText">Checking status...</span>
                     </div>
                     <div id="qrContainer"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 16px;">
-                        <button class="btn" onclick="connectWhatsApp()">Re-Connect</button>
-                        <button class="btn secondary" onclick="disconnectWhatsApp()">Disconnect</button>
+                    <div id="waActionButtons" style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn" onclick="connectWhatsApp()" id="btnConnect" style="display: none;">Connect</button>
+                        <button class="btn" onclick="connectWhatsApp()" id="btnReconnect" style="display: none;">Re-Connect</button>
+                        <button class="btn secondary" onclick="disconnectWhatsApp()" id="btnDisconnect" style="display: none;">Disconnect</button>
                     </div>
                 </div>
                 <div class="card">
                     <h2>AI Mode</h2>
                     <div class="toggle" style="margin-bottom: 16px;">
                         <span>Status</span>
+                        <h4>Connect WhatsApp to chat with Mika ✨</h4>
                         <select id="botOn">
                             <option value="true">ON</option>
                             <option value="false">OFF</option>
                         </select>
                     </div>
-                    <label>Personality</label>
-                    <select id="aiMode">
-                        <option value="romantic">Romantic</option>
-                        <option value="casual">Casual</option>
-                        <option value="professional">Professional</option>
-                    </select>
+
                     <button class="btn" style="margin-top: 16px;" onclick="saveSettings()">Save AI Mode</button>
                 </div>
                 <div class="card">
@@ -438,16 +495,22 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <h2>AI Test Chat</h2>
-                    <button class="btn danger" onclick="clearTestMemory()">Clear</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="aiModelSelect" style="padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #fff; font-size: 0.85em;">
+                            <option value="auto" style="background:#1a1a2e;color:#fff;">Auto (Failover)</option>
+                            <option value="groq_1" style="background:#1a1a2e;color:#fff;">Groq 1</option>
+                            <option value="groq_2" style="background:#1a1a2e;color:#fff;">Groq 2</option>
+                            <option value="groq_3" style="background:#1a1a2e;color:#fff;">Groq 3</option>
+                            <option value="groq_4" style="background:#1a1a2e;color:#fff;">Groq 4</option>
+                            <option value="groq_5" style="background:#1a1a2e;color:#fff;">Groq 5</option>
+                        </select>
+                        <button class="btn danger" onclick="clearTestMemory()">Clear</button>
+                    </div>
                 </div>
                 <div id="testChatHistory" class="memory-box" style="margin-bottom: 16px; height: 340px;"></div>
                 <div class="test-input">
                     <input type="text" id="testInput" placeholder="Type a message" onkeypress="if(event.key==='Enter') sendTestMessage()">
-                    <select id="testMode">
-                        <option value="romantic">Romantic</option>
-                        <option value="casual">Casual</option>
-                        <option value="professional">Professional</option>
-                    </select>
+
                     <button class="btn" onclick="sendTestMessage()">Send</button>
                 </div>
             </div>
@@ -554,38 +617,43 @@
             });
             const result = await response.json();
             updateWAStatus(result.status);
-
-            if (result.status !== 'connected') {
-                const qrRes = await fetch('/api/whatsapp/qr', { headers: { 'Authorization': `Bearer ${token}` } });
-                const qrData = await qrRes.json();
-                if (qrData.success && qrData.qr) showQR(qrData.qr);
-            }
         }
 
         function updateWAStatus(status) {
             const indicator = document.querySelector('#waStatus .status-indicator');
             const text = document.getElementById('waStatusText');
+            
+            const btnConnect = document.getElementById('btnConnect');
+            const btnReconnect = document.getElementById('btnReconnect');
+            const btnDisconnect = document.getElementById('btnDisconnect');
 
             indicator.className = 'status-indicator';
+            
+            btnConnect.style.display = 'none';
+            btnReconnect.style.display = 'none';
+            btnDisconnect.style.display = 'none';
 
             switch(status) {
                 case 'connected':
                     indicator.classList.add('status-connected');
                     text.textContent = 'Connected';
+                    btnReconnect.style.display = 'inline-block';
+                    btnDisconnect.style.display = 'inline-block';
                     hideQR();
-                    break;
-                case 'logged_out':
-                case 'disconnected':
-                    indicator.classList.add('status-disconnected');
-                    text.textContent = 'Disconnected';
                     break;
                 case 'connecting':
                     indicator.classList.add('status-loading');
                     text.textContent = 'Connecting / Scan QR';
+                    btnDisconnect.style.display = 'inline-block';
                     break;
+                case 'logged_out':
+                case 'disconnected':
                 default:
-                    indicator.classList.add('status-loading');
-                    text.textContent = status || 'Checking';
+                    indicator.classList.add('status-disconnected');
+                    text.textContent = 'WhatsApp not connected';
+                    btnConnect.style.display = 'inline-block';
+                    hideQR();
+                    break;
             }
         }
 
@@ -796,6 +864,7 @@
 
             if (!result.success || !result.memory) {
                 container.innerHTML = 'No smart memory for this chat yet.';
+                container.innerHTML += '<p>Mika analyzes your messages to remember context.</p>';
                 return;
             }
 
@@ -876,7 +945,7 @@
         async function sendTestMessage() {
             const input = document.getElementById('testInput');
             const message = input.value.trim();
-            const mode = document.getElementById('testMode').value;
+            const forceProvider = document.getElementById('aiModelSelect').value;
             const token = localStorage.getItem('token');
 
             if (!message) return;
@@ -892,12 +961,12 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ message, ai_mode: mode })
+                    body: JSON.stringify({ message, forceProvider: forceProvider === 'auto' ? '' : forceProvider })
                 });
 
                 const result = await response.json();
                 if (result.success) {
-                    appendTestMessage({ role: 'assistant', text: result.reply, senderName: 'Joyz AI' });
+                    appendTestMessage({ role: 'assistant', text: result.reply, senderName: 'Mika AI' });
                 } else {
                     appendTestMessage({ role: 'assistant', text: 'Error: ' + result.error, senderName: 'System' });
                 }

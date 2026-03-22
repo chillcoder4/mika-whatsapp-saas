@@ -35,7 +35,7 @@ function startSmartSummaryScheduler() {
     updateSmartSummaries().catch(() => {});
     setInterval(() => {
         updateSmartSummaries().catch(() => {});
-    }, 60 * 1000);
+    }, 5 * 60 * 1000); // Run every 5 minutes to save Groq API credits
 }
 
 module.exports = { startSmartSummaryScheduler };

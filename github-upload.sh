@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Joyz WhatsApp SaaS - GitHub Upload Script (Mac/Linux)
+# Mika WhatsApp SaaS - GitHub Upload Script (Mac/Linux)
 # Created for: Jaswant Sir
 
 echo "========================================"
-echo "Joyz WhatsApp SaaS - GitHub Upload"
+echo "Mika WhatsApp SaaS - GitHub Upload"
 echo "========================================"
 echo ""
 
@@ -19,14 +19,14 @@ git add .
 
 echo ""
 echo "Committing changes..."
-git commit -m "Joyz Bot V3.0 - Multi-User SaaS:
+git commit -m "Mika Bot V3.1 - Multi-User SaaS AI:
 - Firebase Auth + Realtime Database (per-user isolation)
 - Multi-user WhatsApp sessions with Baileys v7
-- AI failover: Groq primary/secondary + xAI (Grok) fallback
-- Smart Memory + Temp Memory per chat
-- Web Search via Serper.dev
-- Wait/Pause timer system
-- Owner bypass for ignore lists and pause
+- Super AI failover: 5-Key Groq LLaMa-3 Chain
+- Context-Aware Internet Search via Native Tool Calling
+- Double Serper API failover
+- Persistent Explicit Vibe tracking in Smart Memory
+- Advanced Human-like conversational logic
 - Beautiful dashboard with signup/login/QR
 - Render deployment ready"
 
@@ -36,7 +36,7 @@ echo "NEXT STEP: Create GitHub Repo"
 echo "========================================"
 echo ""
 echo "1. Go to: https://github.com/new"
-echo "2. Repository name: joyz-whatsapp-saas"
+echo "2. Repository name: mika-whatsapp-saas"
 echo "3. Select Public (or Private)"
 echo "4. Click 'Create repository'"
 echo "5. Copy repository URL"

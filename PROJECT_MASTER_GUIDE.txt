@@ -1,0 +1,165 @@
+PROJECT MASTER GUIDE: Mika WhatsApp SaaS
+
+=====================================================================
+STEP 1: UNIVERSAL MASTER PROMPT (AI HANDOVER)
+=====================================================================
+
+You are an expert full-stack developer and AI engineer. You are tasked with continuing the development of the "Mika WhatsApp SaaS" project.
+
+PROJECT PURPOSE:
+A multi-user WhatsApp automation platform that uses the Baileys library for WhatsApp integration, Groq (Llama 3) for AI processing, and Firebase for authentication, persistent storage, and multi-user scaling.
+
+CORE ARCHITECTURE:
+- Backend: Node.js with Express and Socket.io.
+- WhatsApp: @whiskeysockets/baileys (v7+) handling multi-device sessions.
+- AI: Groq SDK (Llama 3.3 70B) with dynamic system prompts and web search (Serper.dev).
+- Database: Firebase Realtime Database for settings, memory, and session pointers.
+- Auth: Firebase Authentication (Email/Pass) with JWT for dashboard access.
+- Frontend: Vanilla JS dashboard with live socket updates for QR and status.
+
+EXECUTION FLOW:
+1. Server starts (`src/app.js` -> `src/server.js`).
+2. Firebase initializes (`src/services/firebase-service.js`).
+3. WhatsApp socket initiates (`src/whatsapp.js`) using local file storage or Firebase for credentials.
+4. User scans QR via Dashboard (`public/dashboard.html`).
+5. Incoming WhatsApp messages trigger `messages.upsert` -> `src/messageHandler.js`.
+6. Message analysis: De-duplication -> Command check -> Ignore list check.
+7. AI response generation (`src/ai.js`) with history retrieval from `memory-manager.js`.
+8. AI reply sent to WhatsApp with human-like typing delay.
+
+AI LOGIC FLOW:
+User Message -> Memory Retrieval (Last 8-10 msg) -> Web Search Check -> System Prompt Assembly -> Groq API (Llama 3.3) -> Human Delay -> WhatsApp Reply.
+
+DATA STORAGE FLOW:
+- Local Cache: `memory-manager.js` (Map) for fast context.
+- Persistent: Firebase Realtime Database for long-term memory, user settings, and session status.
+- Auth: `auth_info_baileys/` folder locally or Firebase credentials node.
+
+=====================================================================
+STEP 2: SYSTEM ARCHITECTURE (ASCII)
+=====================================================================
+
+[ USER DEVICE ] <---(WhatsApp Message)---> [ WHATSAPP SERVERS ]
+                                                 ^
+                                                 | (Baileys WebSockets)
+                                                 v
+[ DASHBOARD UI ] <---(Socket.io/REST)---> [ BACKEND (Node.js) ]
+      (HTML/JS)                                  |
+                                        +--------+--------+
+                                        |                 |
+                                [ GROQ AI API ]    [ FIREBASE ]
+                                (Llama 3.3)        (Auth/DB/Storage)
+                                        |                 |
+                                [ SERPER API ]     [ LOCAL SESSIONS ]
+                                (Web Search)       (auth_info_baileys)
+
+=====================================================================
+STEP 3: HOW TO RUN PROJECT
+=====================================================================
+
+PREREQUISITES:
+- Node.js version >= 18.0.0
+- NPM or Yarn
+- Firebase Project
+- Groq API Key (gsk_...)
+
+LOCAL SETUP:
+1. Clone the repository.
+2. Run: npm install
+3. Setup Environment Variables:
+   - Copy .env.example to .env
+   - Fill in Firebase config (Web & Admin SDK)
+   - Fill in GROQ_API_KEY
+   - (Optional) Add SERPER_API_KEY for internet search.
+4. Start the server:
+   - Development: npm run dev
+   - Production: npm start
+
+HOW QR LOGIN WORKS:
+1. Open http://localhost:3000 in your browser.
+2. The dashboard will automatically request a QR code from the backend via Socket.io.
+3. Use your WhatsApp mobile app (Linked Devices) to scan the QR shown on the dashboard.
+4. Once connected, the dashboard status will turn green.
+
+=====================================================================
+STEP 4: COMMANDS SECTION
+=====================================================================
+
+SERVER COMMANDS:
+- npm start          : Run the production server.
+- npm run dev        : Run the server with nodemon (auto-reload).
+
+WHATSAPP BROWSER COMMANDS (Send to bot chat):
+- !ping              : Check if the bot is alive.
+- !bot on/off        : Enable or disable AI replies globally.
+- !stats             : View message counts for the current chat.
+- !clear             : Clear the AI's memory for the current chat.
+
+=====================================================================
+STEP 5: DEPLOYMENT GUIDE
+=====================================================================
+
+RAILWAY / RENDER / VPS:
+1. Environment Variables: Ensure all variables from .env are set in the provider's dashboard.
+2. Persistence: 
+   - Baileys requires a persistent filesystem for the `auth_info_baileys` folder.
+   - On Render/Railway, use "Volumes" or ensure Firebase Session storage is enabled in `firebase-service.js`.
+3. Node Version: Set NODE_VERSION to 18 or higher.
+
+COMMON ERRORS & FIXES:
+- Error 515 (Stream Error): Automatic reconnect is implemented in `whatsapp.js`.
+- QR not showing: Ensure Socket.io port is not blocked and FIREBASE_PROJECT_ID is correct.
+- Session Loss: If using non-persistent disks, use Firebase to store `creds.json`.
+
+=====================================================================
+STEP 6: CURRENT FEATURES LIST
+=====================================================================
+
+- Multi-User WhatsApp Login: Supports multiple sessions via Firebase/Local Auth.
+- Live QR Dashboard: Real-time QR generation and connection status via WebSockets.
+- Firebase Auth: Secure login/signup system for users to manage their bots.
+- Llama 3 AI Chat: Advanced conversational AI powered by Groq's 70B model.
+- Smart Memory System: In-memory and persistent storage of last 10 messages for context.
+- Internet Search (Serper): AI can search the web to answer current event questions.
+- Personality Modes: Choose between Romantic (Mika), Casual, or Professional.
+- Human-Like Behavior: Variable typing delays and "composing" status indicators.
+- Ignore Lists: Ability to skip specific groups or private chats.
+
+=====================================================================
+STEP 7: FUTURE FEATURES (AI SUGGESTED)
+=====================================================================
+
+1. VOICE REPLIES: Integration with ElevenLabs for sending realistic voice notes.
+   (Why: High engagement and personalization).
+2. AUTO SCHEDULING: Dashboard tool to schedule broadcasts or reminders.
+   (Why: Essential for SaaS marketing use cases).
+3. ANALYTICS DASHBOARD: Chart.js integration to show message volume and top users.
+   (Why: Helps users monitor bot utility).
+4. MULTI-DEVICE SCALING: Worker-based architecture to handle thousands of users.
+   (Why: Support for high-traffic SaaS growth).
+5. SAAS BILLING: Stripe integration for subscription-based access.
+   (Why: Direct monetization path for the platform).
+6. AI PERSONALITY STORE: Marketplace for pre-configured system prompts.
+   (Why: Eases onboarding for non-technical users).
+
+=====================================================================
+STEP 8: TROUBLESHOOTING
+=====================================================================
+
+- QR CODE LOOPING: If the QR code changes too fast, check server latency or Firebase connection.
+- 405 ERRORS (Socket.io): Usually means the client is trying to connect to a different port or missing Auth token.
+- FIREBASE PERMISSION DENIED: Ensure Firebase Realtime Database rules allow Read/Write for `users/{uid}`.
+- SESSIONS NOT PERSISTENT: Delete `auth_info_baileys` folder and re-scan if storage is corrupted.
+
+=====================================================================
+STEP 9: DEVELOPER HANDOVER
+=====================================================================
+
+If you are a new developer or AI:
+1. Start by reviewing `src/server.js` to see how the API and Sockets are wired.
+2. Check `src/messageHandler.js` to understand the logic flow of incoming messages.
+3. Review `src/ai.js` to see how prompts are built and sent to Groq.
+4. The project is designed to be modular; add new services in `src/services/` and UI in `public/`.
+
+END OF GUIDE
+=====================================================================

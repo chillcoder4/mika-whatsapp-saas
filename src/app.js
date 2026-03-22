@@ -5,9 +5,20 @@ const { initializeFirebase } = require('./services/firebase-service');
 const { startServer } = require('./dashboard/server');
 const { startSmartSummaryScheduler } = require('./memory/smart-summary');
 
+// --- Global Safety Nets to prevent Server Crash ---
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ [Unhandled Rejection]', reason);
+    // Does not exit process, keeps WhatsApp sockets alive
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('❌ [Uncaught Exception]', error);
+    // Does not exit process, keeps WhatsApp sockets alive
+});
+
 (async () => {
     console.log('========================================');
-    console.log('🚀 JOYZ WHATSAPP SAAS SYSTEM');
+    console.log('🚀 MIKA WHATSAPP SAAS SYSTEM');
     console.log('========================================');
 
     try {
